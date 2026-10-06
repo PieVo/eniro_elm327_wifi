@@ -35,8 +35,8 @@ class KiaEniroOptionsFlowHandler(config_entries.OptionsFlow):
         options_schema = vol.Schema({
             vol.Optional(
                 "scan_interval_minutes",
-                default=self.config_entry.options.get("scan_interval_minutes", 10)
-            ): int,
+                default=self.config_entry.options.get("scan_interval_minutes", 10),
+            ): vol.All(int, vol.Range(min=1, max=60)),
         })
 
         return self.async_show_form(step_id="init", data_schema=options_schema)

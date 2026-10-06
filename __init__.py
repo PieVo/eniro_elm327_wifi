@@ -11,7 +11,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Kia e-Niro ELM327 WiFi from a config entry."""
     _LOGGER.debug("Setting up integration %s (entry_id=%s)", DOMAIN, entry.entry_id)
 
-    coordinator = SocCoordinator(entry.data, hass)
+    coordinator = SocCoordinator(entry.data, entry.options, hass)
+    entry.async_on_unload(entry.add_update_listener(async_reload_entry))
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = {"coordinator": coordinator}
 
@@ -21,6 +22,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Forward setup to the sensor and button platforms.
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
+
+
+async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Reload the integration when its options change."""
+    await hass.config_entries.async_reload(entry.entry_id)
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload the Kia e-Niro ELM327 WiFi config entry."""

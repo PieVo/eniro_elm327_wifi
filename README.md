@@ -18,4 +18,4 @@ The BMS request uses transmit header `7E4` and response header `7EC`.
 
 ## Setup
 
-Add the integration in Home Assistant and enter the ELM327 WiFi adapter's IP address and TCP port (usually `35000`). The coordinator polls every two minutes while the adapter is reachable. No cloud service is used.
+Add the integration in Home Assistant and enter the ELM327 WiFi adapter's IP address and TCP port (usually `35000`). The coordinator polls at the configured interval (default 10 minutes), which can be set to 1-60 minutes in the integration options. Diagnostic requests retry once after one second if the ELM returns `CAN ERROR` or `NO DATA`. No cloud service is used.

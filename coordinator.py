@@ -90,12 +90,14 @@ def response_payload(response, expected_header):
 
 
 class SocCoordinator(DataUpdateCoordinator):
-    def __init__(self, config, hass):
+    def __init__(self, config, options, hass):
         super().__init__(
             hass,
             _LOGGER,
             name="kia_eniro_elm327_wifi",
-            update_interval=datetime.timedelta(minutes=2),
+            update_interval=datetime.timedelta(
+                minutes=options.get("scan_interval_minutes", 10)
+            ),
         )
         self.config = config
 
