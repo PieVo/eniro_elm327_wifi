@@ -8,22 +8,22 @@ from .coordinator import SocCoordinator
 _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up Ariya ELM327 WiFi from a config entry."""
+    """Set up Kia e-Niro ELM327 WiFi from a config entry."""
     _LOGGER.debug("Setting up integration %s (entry_id=%s)", DOMAIN, entry.entry_id)
 
     coordinator = SocCoordinator(entry.data, hass)
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = {"coordinator": coordinator}
 
-    # 🔑 Premier refresh obligatoire pour initialiser coordinator.data
+    # The first refresh initializes coordinator data before sensor setup.
     await coordinator.async_config_entry_first_refresh()
 
-    # Charger les plateformes (sensor, button, etc.)
+    # Forward setup to the sensor and button platforms.
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Unload Ariya ELM327 WiFi config entry."""
+    """Unload the Kia e-Niro ELM327 WiFi config entry."""
     _LOGGER.debug("Unloading integration %s (entry_id=%s)", DOMAIN, entry.entry_id)
 
     unloaded = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)

@@ -2,7 +2,7 @@
 import socket
 import time
 
-IP = "192.168.23.154"   # adresse IP du module
+IP = "192.168.3.87"   # adresse IP du module
 PORT = 35000           # port TCP du module
 
 def send(sock, cmd):

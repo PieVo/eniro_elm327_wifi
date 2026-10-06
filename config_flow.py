@@ -2,16 +2,17 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.core import callback
 
-DOMAIN = "ariya_elm327_wifi"
+from .const import DOMAIN
 
-class AriyaElm327ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Flux de configuration principal pour Ariya ELM327 WiFi."""
+
+class KiaEniroConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
+    """Configuration for the Kia e-Niro ELM327 WiFi integration."""
 
     VERSION = 1
 
     async def async_step_user(self, user_input=None):
         if user_input is not None:
-            return self.async_create_entry(title="Ariya ELM327 WiFi", data=user_input)
+            return self.async_create_entry(title="Kia e-Niro ELM327 WiFi", data=user_input)
 
         data_schema = vol.Schema({
             vol.Required("elm_ip"): str,
@@ -21,8 +22,8 @@ class AriyaElm327ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return self.async_show_form(step_id="user", data_schema=data_schema)
 
 
-class AriyaElm327OptionsFlowHandler(config_entries.OptionsFlow):
-    """Gestion des options pour Ariya ELM327 WiFi."""
+class KiaEniroOptionsFlowHandler(config_entries.OptionsFlow):
+    """Options for Kia e-Niro ELM327 WiFi."""
 
     def __init__(self, config_entry):
         self.config_entry = config_entry

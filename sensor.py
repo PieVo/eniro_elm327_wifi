@@ -1,40 +1,39 @@
 import logging
+
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.components.sensor import SensorEntity
-from homeassistant.const import PERCENTAGE, UnitOfElectricPotential
+from homeassistant.const import (
+    PERCENTAGE,
+    UnitOfElectricPotential,
+    UnitOfLength,
+    UnitOfPower,
+    UnitOfPressure,
+)
 
 from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
-def correct_soc(soc_bms: float) -> float:
-    """Correction du SOC brut."""
-    return soc_bms - 6 if soc_bms is not None else None
-
 async def async_setup_entry(hass, entry, async_add_entities):
-    """Ajoute les capteurs Ariya."""
+    """Add Kia e-Niro sensors."""
     coordinator = hass.data[DOMAIN][entry.entry_id]["coordinator"]
 
     async_add_entities(
         [
-            AriyaSocRawSensor(coordinator, entry.entry_id),
-            AriyaSocSensor(coordinator, entry.entry_id),
-            AriyaElmVoltageSensor(coordinator, entry.entry_id),
-            AriyaHvVoltageSensor(coordinator, entry.entry_id),
-            AriyaBatteryPowerSensor(coordinator, entry.entry_id),
-            AriyaBatteryTempSensor(coordinator, entry.entry_id),
-            AriyaRemainingEnergySensor(coordinator, entry.entry_id),
-            AriyaBatteryAmpsSensor(coordinator, entry.entry_id),
-            AriyaCurrentSensor(coordinator, entry.entry_id),
+            KiaSocSensor(coordinator, entry.entry_id),
+            KiaBatteryVoltageSensor(coordinator, entry.entry_id),
+            KiaAuxBatteryVoltageSensor(coordinator, entry.entry_id),
+            KiaBatteryPowerSensor(coordinator, entry.entry_id),
+            KiaOdometerSensor(coordinator, entry.entry_id),
+            KiaTirePressureSensor(coordinator, entry.entry_id, "front_left", "Front Left"),
+            KiaTirePressureSensor(coordinator, entry.entry_id, "front_right", "Front Right"),
+            KiaTirePressureSensor(coordinator, entry.entry_id, "rear_right", "Rear Right"),
+            KiaTirePressureSensor(coordinator, entry.entry_id, "rear_left", "Rear Left"),
         ],
         True,
     )
 
-class BaseAriyaSensor(CoordinatorEntity, SensorEntity):
-    """Classe de base pour ajouter restore_state et device_info."""
-
-    _attr_restore_state = True  # <-- conserve la valeur au reboot
-
+class BaseKiaSensor(CoordinatorEntity, SensorEntity):
     def __init__(self, coordinator, entry_id):
         super().__init__(coordinator)
         self._entry_id = entry_id
@@ -43,117 +42,98 @@ class BaseAriyaSensor(CoordinatorEntity, SensorEntity):
     def device_info(self):
         return {
             "identifiers": {(DOMAIN, self._entry_id)},
-            "name": "Nissan Ariya",
-            "manufacturer": "Nissan",
-            "model": "Ariya ELM327 WiFi",
+            "name": "Kia e-Niro",
+            "manufacturer": "Kia",
+            "model": "e-Niro ELM327 WiFi",
         }
 
-class AriyaSocSensor(BaseAriyaSensor):
+
+class KiaSocSensor(BaseKiaSensor):
     def __init__(self, coordinator, entry_id):
         super().__init__(coordinator, entry_id)
-        self._attr_name = "Ariya SOC corrigé"
-        self._attr_unique_id = f"{entry_id}_soc_corrige"
+        self._attr_name = "Displayed State of Charge"
+        self._attr_unique_id = f"{entry_id}_soc_display_pct"
         self._attr_icon = "mdi:battery"
         self._attr_native_unit_of_measurement = PERCENTAGE
+        self._attr_device_class = "battery"
+        self._attr_state_class = "measurement"
 
     @property
     def native_value(self):
-        soc_bms = self.coordinator.data.get("soc_bms")
-        return correct_soc(soc_bms)
+        return self.coordinator.data.get("soc_display_pct")
 
-class AriyaSocRawSensor(BaseAriyaSensor):
+
+class KiaBatteryVoltageSensor(BaseKiaSensor):
     def __init__(self, coordinator, entry_id):
         super().__init__(coordinator, entry_id)
-        self._attr_name = "Ariya SOC brut"
-        self._attr_unique_id = f"{entry_id}_soc_raw"
-        self._attr_icon = "mdi:battery"
-        self._attr_native_unit_of_measurement = PERCENTAGE
-
-    @property
-    def native_value(self):
-        return self.coordinator.data.get("soc_bms")
-
-class AriyaElmVoltageSensor(BaseAriyaSensor):
-    def __init__(self, coordinator, entry_id):
-        super().__init__(coordinator, entry_id)
-        self._attr_name = "ELM327 Voltage"
-        self._attr_unique_id = f"{entry_id}_elm327_voltage"
-        self._attr_icon = "mdi:flash"
+        self._attr_name = "Battery Voltage"
+        self._attr_unique_id = f"{entry_id}_battery_voltage"
+        self._attr_icon = "mdi:car-battery"
         self._attr_native_unit_of_measurement = UnitOfElectricPotential.VOLT
+        self._attr_device_class = "voltage"
+        self._attr_state_class = "measurement"
 
     @property
     def native_value(self):
-        return self.coordinator.data.get("voltage_12v")
+        return self.coordinator.data.get("battery_voltage")
 
-class AriyaHvVoltageSensor(BaseAriyaSensor):
+
+class KiaAuxBatteryVoltageSensor(BaseKiaSensor):
     def __init__(self, coordinator, entry_id):
         super().__init__(coordinator, entry_id)
-        self._attr_name = "HV Battery Voltage"
-        self._attr_unique_id = f"{entry_id}_hv_voltage"
-        self._attr_icon = "mdi:car-electric"
+        self._attr_name = "Auxiliary Battery Voltage"
+        self._attr_unique_id = f"{entry_id}_aux_battery_voltage"
+        self._attr_icon = "mdi:car-battery"
         self._attr_native_unit_of_measurement = UnitOfElectricPotential.VOLT
+        self._attr_device_class = "voltage"
+        self._attr_state_class = "measurement"
 
     @property
     def native_value(self):
-        return self.coordinator.data.get("hv_voltage")
-class AriyaBatteryPowerSensor(BaseAriyaSensor):
+        return self.coordinator.data.get("aux_battery_voltage")
+
+
+class KiaBatteryPowerSensor(BaseKiaSensor):
     def __init__(self, coordinator, entry_id):
         super().__init__(coordinator, entry_id)
-        self._attr_name = "Ariya Battery Power"
-        self._attr_unique_id = f"{entry_id}_battery_power"
+        self._attr_name = "Battery Power"
+        self._attr_unique_id = f"{entry_id}_battery_power_kw"
         self._attr_icon = "mdi:lightning-bolt"
-        self._attr_native_unit_of_measurement = "kW"
+        self._attr_native_unit_of_measurement = UnitOfPower.KILO_WATT
         self._attr_device_class = "power"
+        self._attr_state_class = "measurement"
 
     @property
     def native_value(self):
-        return self.coordinator.data.get("battery_power")
+        return self.coordinator.data.get("battery_power_kw")
 
-class AriyaBatteryTempSensor(BaseAriyaSensor):
+
+class KiaOdometerSensor(BaseKiaSensor):
     def __init__(self, coordinator, entry_id):
         super().__init__(coordinator, entry_id)
-        self._attr_name = "Ariya Battery Temperature"
-        self._attr_unique_id = f"{entry_id}_battery_temp"
-        self._attr_icon = "mdi:thermometer"
-        self._attr_native_unit_of_measurement = "°C"
-        self._attr_device_class = "temperature"
+        self._attr_name = "Odometer"
+        self._attr_unique_id = f"{entry_id}_odometer"
+        self._attr_icon = "mdi:counter"
+        self._attr_native_unit_of_measurement = UnitOfLength.KILOMETERS
+        self._attr_device_class = "distance"
+        self._attr_state_class = "total_increasing"
 
     @property
     def native_value(self):
-        return self.coordinator.data.get("battery_temp")
+        return self.coordinator.data.get("odometer_km")
 
-class AriyaRemainingEnergySensor(BaseAriyaSensor):
-    def __init__(self, coordinator, entry_id):
+
+class KiaTirePressureSensor(BaseKiaSensor):
+    def __init__(self, coordinator, entry_id, wheel, wheel_name):
         super().__init__(coordinator, entry_id)
-        self._attr_name = "Ariya Remaining Energy"
-        self._attr_unique_id = f"{entry_id}_remaining_kwh"
-        self._attr_icon = "mdi:gauge"
-        self._attr_native_unit_of_measurement = "kWh"
+        self._attr_name = f"{wheel_name} Tire Pressure"
+        self._attr_unique_id = f"{entry_id}_{wheel}_tire_pressure"
+        self._attr_icon = "mdi:car-tire-alert"
+        self._attr_native_unit_of_measurement = UnitOfPressure.BAR
+        self._attr_device_class = "pressure"
+        self._attr_state_class = "measurement"
+        self._sensor_key = f"{wheel}_pressure_bar"
 
     @property
     def native_value(self):
-        return self.coordinator.data.get("remaining_kwh")
-
-class AriyaBatteryAmpsSensor(BaseAriyaSensor):
-    def __init__(self, coordinator, entry_id):
-        super().__init__(coordinator, entry_id)
-        self._attr_name = "Ariya Battery Amps"
-        self._attr_unique_id = f"{entry_id}_battery_amps"
-        self._attr_icon = "mdi:current-ac"
-        self._attr_native_unit_of_measurement = "A"
-
-    @property
-    def native_value(self):
-        return self.coordinator.data.get("battery_amps")
-
-class AriyaCurrentSensor(BaseAriyaSensor):
-    def __init__(self, coordinator, entry_id):
-        super().__init__(coordinator, entry_id)
-        self._attr_name = "Ariya Battery Current"
-        self._attr_unique_id = f"{entry_id}_battery_current"
-        self._attr_icon = "mdi:current-ac"
-        self._attr_native_unit_of_measurement = "A"
-
-    @property
-    def native_value(self):
-        return self.coordinator.data.get("current_amps")
+        return self.coordinator.data.get(self._sensor_key)

@@ -1,2 +1,2 @@
-DOMAIN = "ariya_elm327_wifi"
+DOMAIN = "eniro_elm327_wifi"
 PLATFORMS = ["sensor", "button"]

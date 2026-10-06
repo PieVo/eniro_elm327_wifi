@@ -5,13 +5,13 @@ from .const import DOMAIN
 
 async def async_setup_entry(hass, entry, async_add_entities):
     coordinator = hass.data[DOMAIN][entry.entry_id]["coordinator"]
-    async_add_entities([AriyaForceRefreshButton(coordinator, entry.entry_id)], True)
+    async_add_entities([KiaForceRefreshButton(coordinator, entry.entry_id)], True)
 
-class AriyaForceRefreshButton(CoordinatorEntity, ButtonEntity):
+class KiaForceRefreshButton(CoordinatorEntity, ButtonEntity):
     def __init__(self, coordinator, entry_id):
         super().__init__(coordinator)
         self._entry_id = entry_id
-        self._attr_name = "Ariya Force Refresh"
+        self._attr_name = "Kia Force Refresh"
         self._attr_unique_id = f"{entry_id}_force_refresh"
         self._attr_icon = "mdi:refresh"
         self._attr_entity_category = EntityCategory.CONFIG
@@ -20,9 +20,9 @@ class AriyaForceRefreshButton(CoordinatorEntity, ButtonEntity):
     def device_info(self):
         return {
             "identifiers": {(DOMAIN, self._entry_id)},
-            "name": "Nissan Ariya",
-            "manufacturer": "Nissan",
-            "model": "Ariya ELM327 WiFi",
+            "name": "Kia e-Niro",
+            "manufacturer": "Kia",
+            "model": "e-Niro ELM327 WiFi",
         }
 
     async def async_press(self):

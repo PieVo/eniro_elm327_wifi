@@ -1,15 +1,22 @@
-# ariya_elm327_wifi
-Need to smart charge my Nissan Ariya and need EV battery state in Home Assistant
+# Kia e-Niro ELM327 WiFi
 
-I use Vgate iCar Pro Wifi (ELM 327 OBD-II) and switch configuration to client mode (STA)
+Home Assistant integration for local Kia e-Niro readings over a WiFi-connected ELM327 adapter.
 
-Share this from @dconlon https://github.com/dconlon/icar_obd_wifi
-Considering that the vehicle OBD2 port is writable, I don’t want the iCar plugged in permanently broadcasting an open WiFi network.
+## Origin
 
-The 1MB flash version of the LPT230 unfortunately does not have a full web interface but it is sufficient to change WiFi configuration to station mode to have the LPT230 connect to your home WiFi instead of it being an open AP. Whilst connected to the V-LINK WiFi open a web browser to http://192.168.0.10. My device required username "guest” with password “&^)@@)”, another user had success with "admin" and "admin"
+This repository's original integration targeted the Nissan Ariya. The current version adapts it for the Kia e-Niro using Kia-specific PID and read-method references, including [OBD-PIDs-for-HKMC-EVs](https://github.com/JejuSoul/OBD-PIDs-for-HKMC-EVs). The original ELM327 WiFi adapter reference is [dconlon/icar_obd_wifi](https://github.com/dconlon/icar_obd_wifi).
 
-Right now ev battery state, and 12v battery from elm327 is working and scan each 10 minutes
+## Sensors
 
-To disable power saving on the dongle you can edit disable_powersaving_icar_pro.py and change with you ip address
+- Displayed State of Charge, read using PID `22 01 05` at byte offset `af` (`31`), scaled by `1/2` as specified in the supplied Kona/Niro BMS CSV. This is distinct from BMS SOC (`22 01 01`, byte `e`).
+- High-voltage battery voltage, from the same BMS response.
+- Auxiliary 12 V battery voltage, read using PID `21 02` from ECU `7E2` (response `7EA`), with the CSV formula `((signed(U) * 256) + T) / 1000`.
+- Battery power in kW, calculated as signed battery current multiplied by battery voltage and divided by 1000. Positive and negative values retain the BMS current direction for tracing charge/discharge power.
+- Four tire pressures, read using TPMS PID `22 C0 0B`.
+- Odometer, read from the instrument cluster using PID `22 B0 02` on transmit header `7C6` (response header `7CE`). Bytes `g:h:i` are decoded as an unsigned 24-bit kilometer value.
 
-Local polling of Nissan Ariya SoC and battery data via ELM327 WiFi for Home Assistant. No cloud required.
+The BMS request uses transmit header `7E4` and response header `7EC`. TPMS uses `7A0` and `7A8`.
+
+## Setup
+
+Add the integration in Home Assistant and enter the ELM327 WiFi adapter's IP address and TCP port (usually `35000`). The coordinator polls every two minutes while the adapter is reachable. No cloud service is used.
