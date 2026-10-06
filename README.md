@@ -12,10 +12,9 @@ This repository's original integration targeted the Nissan Ariya. The current ve
 - High-voltage battery voltage, from the same BMS response.
 - Auxiliary 12 V battery voltage, read using PID `21 02` from ECU `7E2` (response `7EA`), with the CSV formula `((signed(U) * 256) + T) / 1000`.
 - Battery power in kW, calculated as signed battery current multiplied by battery voltage and divided by 1000. Positive and negative values retain the BMS current direction for tracing charge/discharge power.
-- Four tire pressures, read using TPMS PID `22 C0 0B`.
 - Odometer, read from the instrument cluster using PID `22 B0 02` on transmit header `7C6` (response header `7CE`). Bytes `g:h:i` are decoded as an unsigned 24-bit kilometer value.
 
-The BMS request uses transmit header `7E4` and response header `7EC`. TPMS uses `7A0` and `7A8`.
+The BMS request uses transmit header `7E4` and response header `7EC`.
 
 ## Setup
 

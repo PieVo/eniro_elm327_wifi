@@ -7,7 +7,6 @@ from homeassistant.const import (
     UnitOfElectricPotential,
     UnitOfLength,
     UnitOfPower,
-    UnitOfPressure,
 )
 
 from .const import DOMAIN
@@ -25,10 +24,6 @@ async def async_setup_entry(hass, entry, async_add_entities):
             KiaAuxBatteryVoltageSensor(coordinator, entry.entry_id),
             KiaBatteryPowerSensor(coordinator, entry.entry_id),
             KiaOdometerSensor(coordinator, entry.entry_id),
-            KiaTirePressureSensor(coordinator, entry.entry_id, "front_left", "Front Left"),
-            KiaTirePressureSensor(coordinator, entry.entry_id, "front_right", "Front Right"),
-            KiaTirePressureSensor(coordinator, entry.entry_id, "rear_right", "Rear Right"),
-            KiaTirePressureSensor(coordinator, entry.entry_id, "rear_left", "Rear Left"),
         ],
         True,
     )
@@ -122,18 +117,3 @@ class KiaOdometerSensor(BaseKiaSensor):
     def native_value(self):
         return self.coordinator.data.get("odometer_km")
 
-
-class KiaTirePressureSensor(BaseKiaSensor):
-    def __init__(self, coordinator, entry_id, wheel, wheel_name):
-        super().__init__(coordinator, entry_id)
-        self._attr_name = f"{wheel_name} Tire Pressure"
-        self._attr_unique_id = f"{entry_id}_{wheel}_tire_pressure"
-        self._attr_icon = "mdi:car-tire-alert"
-        self._attr_native_unit_of_measurement = UnitOfPressure.BAR
-        self._attr_device_class = "pressure"
-        self._attr_state_class = "measurement"
-        self._sensor_key = f"{wheel}_pressure_bar"
-
-    @property
-    def native_value(self):
-        return self.coordinator.data.get(self._sensor_key)
