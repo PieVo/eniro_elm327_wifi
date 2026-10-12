@@ -13,6 +13,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     coordinator = SocCoordinator(entry.data, entry.options, hass)
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
+    entry.async_on_unload(coordinator.async_stop)
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = {"coordinator": coordinator}
 
@@ -21,6 +22,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     # Forward setup to the sensor and button platforms.
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    coordinator.async_start()
     return True
 
 

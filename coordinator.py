@@ -4,6 +4,7 @@ import logging
 import re
 import socket
 
+from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -101,6 +102,32 @@ class SocCoordinator(DataUpdateCoordinator):
         )
         self.config = config
 
+        self._adapter_reachable = False
+        self._cancel_probe = None
+
+    def async_start(self):
+        self._cancel_probe = async_track_time_interval(
+            self.hass,
+            self._async_probe_adapter,
+            datetime.timedelta(seconds=15),
+        )
+
+    def async_stop(self):
+        if self._cancel_probe:
+            self._cancel_probe()
+            self._cancel_probe = None
+
+    async def _async_probe_adapter(self, now):
+        reachable = await self.hass.async_add_executor_job(
+            check_host,
+            self.config["elm_ip"],
+            self.config["elm_port"],
+        )
+        was_reachable = self._adapter_reachable
+        self._adapter_reachable = reachable
+        if reachable and not was_reachable:
+            await self.async_request_refresh()
+
     async def async_force_refresh(self):
         await self.async_request_refresh()
 
@@ -113,7 +140,12 @@ class SocCoordinator(DataUpdateCoordinator):
             "odometer_km": None,
         })
 
-        if not check_host(self.config["elm_ip"], self.config["elm_port"]):
+        self._adapter_reachable = await self.hass.async_add_executor_job(
+            check_host,
+            self.config["elm_ip"],
+            self.config["elm_port"],
+        )
+        if not self._adapter_reachable:
             return data
 
         sock = None
