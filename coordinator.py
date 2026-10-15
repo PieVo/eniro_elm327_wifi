@@ -12,7 +12,7 @@ _LOGGER = logging.getLogger(__name__)
 
 async def send(sock, cmd):
     sock.send((cmd + "\r").encode())
-    await asyncio.sleep(1.0)
+    await asyncio.sleep(0.5)
     try:
         response = sock.recv(4096).decode(errors="ignore")
         clean_response = response.replace(">", "").strip()
